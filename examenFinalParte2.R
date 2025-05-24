@@ -202,3 +202,39 @@ plot(future_xts,
      col = "blue")
 dev.off()
 
+# === TABLA DE MÉTRICAS COMPLETA (VAR vs. ARDL) =========================
+library(dplyr) ; library(knitr)
+
+#  a) métrica-error del VAR (RYLD)   – ya tenías metrics_var
+var_err  <- metrics_var["RYLD", c("RMSE","MAE")]
+
+#  b) métrica-error del ARDL
+rmse <- function(e) sqrt(mean(e^2 , na.rm = TRUE))
+mae  <- function(e)        mean(abs(e), na.rm = TRUE)
+e_ardl        <- ardl_vec - real_vec
+ardl_err      <- c(RMSE = rmse(e_ardl), MAE = mae(e_ardl))
+
+#  c) fusiona en un data-frame
+tabla_error <- rbind(
+  VAR  = signif(var_err , 6),
+  ARDL = signif(ardl_err, 6)
+)
+kable(tabla_error, caption = "Errores de pronóstico sobre RYLD")
+
+
+# === BOUND-TEST DE COINTEGRACIÓN (ARDL) ================================
+library(ARDL)
+bt <- bounds_f_test(mod_ardl, case = 2)   # const sin tendencia
+print(bt)
+
+#  ——— rescata estadístico y p-valor por si quieres citarlos explícitos
+Fval <- unclass(bt)$statistic
+pval <- unclass(bt)$p.value
+
+
+# === ESTABILIDAD DEL VAR: RAÍCES DEL POLINOMIO =========================
+roots <- vars::roots(mod_var)
+print(roots)                   # valores propios
+all( Mod(roots) < 1 )          # TRUE = estable
+
+
